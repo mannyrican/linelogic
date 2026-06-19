@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#0f172a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="LineLogic">
+  <title>LineLogic</title>
+  <link rel="manifest" href="manifest.json">
+  <style>
+    :root{--bg:#0b1220;--card:#121c31;--card2:#18243b;--line:#2b3b59;--text:#f8fafc;--muted:#b7c4d8;--blue:#38bdf8;--green:#22c55e}
+    *{box-sizing:border-box} body{margin:0;background:linear-gradient(180deg,#020617,#0f172a);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;color:var(--text)}
+    header{position:sticky;top:0;z-index:5;padding:18px 14px 12px;background:rgba(2,6,23,.96);border-bottom:1px solid var(--line)}
+    h1{margin:0;font-size:28px}.sub{color:var(--muted);font-size:14px;margin-top:4px}
+    main{padding:14px 14px 88px}
+    input,textarea{width:100%;font-size:16px;border:1px solid var(--line);border-radius:16px;background:#020617;color:var(--text);padding:14px;margin:6px 0}
+    .search{font-size:18px;padding:16px}
+    .section{font-size:12px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;margin:18px 2px 10px}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    button{font:inherit}.cardbtn{min-height:74px;text-align:left;padding:14px;border-radius:18px;background:var(--card);color:var(--text);border:1px solid var(--line);box-shadow:0 8px 18px rgba(0,0,0,.20)}
+    .cardbtn small{display:block;color:var(--muted);font-size:12px;margin-top:5px}
+    .result{background:rgba(18,28,49,.98);border:1px solid var(--line);border-radius:20px;padding:15px;margin:12px 0}
+    .result h2{font-size:19px;margin:0 0 8px;color:var(--blue)}
+    .pills{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}.pill{font-size:12px;color:var(--muted);border:1px solid var(--line);background:#020617;border-radius:999px;padding:5px 8px}
+    .label{font-size:12px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;margin-top:12px} li{margin:7px 0;line-height:1.35}
+    .nav{position:fixed;left:0;right:0;bottom:0;background:rgba(2,6,23,.97);border-top:1px solid var(--line);display:flex;gap:8px;padding:10px 10px 14px}
+    .nav button{flex:1;padding:11px 6px;border-radius:14px;border:1px solid var(--line);background:var(--card2);color:var(--text);font-size:12px}
+    .nav button.on{background:var(--blue);color:#00111f;font-weight:800}
+    .hide{display:none}.save{width:100%;background:var(--green);color:#052e16;border:0;border-radius:16px;padding:15px;font-weight:800;margin-top:8px}.empty{text-align:center;color:var(--muted);padding:25px}.tiny{font-size:13px;color:var(--muted);line-height:1.4}
+  </style>
+</head>
+<body>
+<header><h1>LineLogic</h1><div class="sub">Can line troubleshooting in your pocket.</div></header>
+<main>
+  <section id="home">
+    <input id="q" class="search" placeholder="Search low overlap, weld split, 603x700..." oninput="render()">
+    <div class="section">Quick Pick</div>
+    <div class="grid">
+      <button class="cardbtn" onclick="pick('Seamer')">Seamers<small>Hooks, overlap, wrinkles</small></button>
+      <button class="cardbtn" onclick="pick('Welder')">Welders<small>Wire, current, splits</small></button>
+      <button class="cardbtn" onclick="pick('Flanger')">Flangers<small>Flange cracks, height</small></button>
+      <button class="cardbtn" onclick="pick('Conveyor')">Conveyors<small>Jams, guides, timing</small></button>
+    </div>
+    <div class="section">Can Sizes</div><div class="grid" id="sizes"></div>
+    <div class="section">Results</div><div id="results"></div>
+  </section>
+  <section id="machines" class="hide"><div class="section">Machine Library</div><div class="grid" id="machineGrid"></div></section>
+  <section id="add" class="hide">
+    <div class="section">Add Fix</div>
+    <input id="machine" placeholder="Machine: Angelus Seamer">
+    <input id="brand" placeholder="Brand/Model: Soudronic X5">
+    <input id="size" placeholder="Can size: 603x700">
+    <input id="symptom" placeholder="Problem: Low overlap">
+    <textarea id="causes" rows="3" placeholder="Causes, one per line"></textarea>
+    <textarea id="fixes" rows="5" placeholder="Fix steps, one per line"></textarea>
+    <button class="save" onclick="saveFix()">Save Fix</button>
+    <p class="tiny">Your saved fixes stay on this phone/browser.</p>
+  </section>
+</main>
+<div class="nav">
+  <button id="nHome" class="on" onclick="view('home')">Home</button>
+  <button id="nMachines" onclick="view('machines')">Machines</button>
+  <button id="nAdd" onclick="view('add')">Add Fix</button>
+</div>
+<script>
+const starters=[
+{machine:"Seamer",brand:"Angelus / Ferrum / Continental",size:"All sizes",symptom:"Low overlap",causes:["Worn first or second operation roll","Chuck or roll setup incorrect","Lifter height/pressure off","Body hook or cover hook out of spec"],fixes:["Do seam teardown first","Check body hook, cover hook, and overlap","Inspect chuck and rolls","Adjust roll position in small steps","Run sample cans and recheck"]},
+{machine:"Seamer",brand:"All brands",size:"All sizes",symptom:"Wrinkles in cover hook",causes:["Second operation too loose","Damaged chuck","Wrong roll profile","End/compound issue"],fixes:["Check wrinkle rating","Inspect chuck face","Tighten second operation carefully","Check end quality","Run teardown after adjustment"]},
+{machine:"Soudronic Welder",brand:"Soudronic",size:"3-piece cans",symptom:"Weld split",causes:["Weld current low","Copper wire tracking issue","Squeeze rolls dirty/worn","Pre-bow or overlap issue"],fixes:["Check wire path","Verify current setting","Clean/inspect squeeze rolls","Check pre-bow and overlap","Run sample and inspect weld"]},
+{machine:"Soudronic Welder",brand:"Soudronic",size:"3-piece cans",symptom:"Low body overlap before welding",causes:["Blank feed alignment off","Pre-bow incorrect","Side guides worn/loose","Body former timing issue"],fixes:["Check blank squareness","Adjust side guides","Verify pre-bow","Inspect forming rails","Confirm overlap before weld changes"]},
+{machine:"Flanger",brand:"All brands",size:"All sizes",symptom:"Flange crack",causes:["Metal hard/damaged","Tooling worn","Flange height off","Body out of round"],fixes:["Check can roundness","Inspect flange tooling","Verify flange height spec","Look for split at weld seam","Separate material issue from machine issue"]},
+{machine:"Conveyor",brand:"All brands",size:"All sizes",symptom:"Can jam at transfer",causes:["Timing off","Guide rail too tight","Worn starwheel/timing screw","Can size change not adjusted"],fixes:["Clear jam safely","Check guides for size","Inspect starwheel/timing screw","Run slow and watch transfer","Adjust one point at a time"]}
+];
+const sizes=["202","206","209","211","300","303","307","401","404","502","603x700","603x900","Custom"];
+const machines=["Seamer","Soudronic Welder","Flanger","Beader","Necker","Expander","Leak Tester","Light Tester","Conveyor","Depalletizer","Palletizer","Case Packer","Wrapper","Compressor / Air System","Vacuum System","Lubrication System"];
+function data(){return starters.concat(JSON.parse(localStorage.getItem("ll_fixes")||"[]"))}
+function pick(x){document.getElementById("q").value=x;view("home");render();scrollTo(0,0)}
+function view(v){["home","machines","add"].forEach(x=>document.getElementById(x).classList.toggle("hide",x!==v));document.getElementById("nHome").classList.toggle("on",v==="home");document.getElementById("nMachines").classList.toggle("on",v==="machines");document.getElementById("nAdd").classList.toggle("on",v==="add")}
+function render(){
+ const q=document.getElementById("q").value.toLowerCase().trim();
+ const list=data().filter(r=>(`${r.machine} ${r.brand} ${r.size} ${r.symptom} ${r.causes.join(" ")} ${r.fixes.join(" ")}`).toLowerCase().includes(q));
+ document.getElementById("results").innerHTML=list.length?list.map(r=>`<div class="result"><h2>${r.symptom}</h2><div class="pills"><span class="pill">${r.machine}</span><span class="pill">${r.brand}</span><span class="pill">${r.size}</span></div><div class="label">Likely Causes</div><ul>${r.causes.map(x=>`<li>${x}</li>`).join("")}</ul><div class="label">Fix Steps</div><ol>${r.fixes.map(x=>`<li>${x}</li>`).join("")}</ol></div>`).join(""):`<div class="empty">No fix found yet. Add it.</div>`;
+}
+function saveFix(){
+ const r={machine:machine.value||"Unknown",brand:brand.value||"Custom",size:size.value||"All sizes",symptom:symptom.value,causes:causes.value.split("\n").filter(Boolean),fixes:fixes.value.split("\n").filter(Boolean)};
+ if(!r.symptom||!r.fixes.length){alert("Add the problem and at least one fix step.");return}
+ const arr=JSON.parse(localStorage.getItem("ll_fixes")||"[]");arr.unshift(r);localStorage.setItem("ll_fixes",JSON.stringify(arr));
+ ["machine","brand","size","symptom","causes","fixes"].forEach(id=>document.getElementById(id).value="");view("home");render();alert("Saved.");
+}
+document.getElementById("sizes").innerHTML=sizes.map(s=>`<button class="cardbtn" onclick="pick('${s}')">${s}<small>Filter by size</small></button>`).join("");
+document.getElementById("machineGrid").innerHTML=machines.map(m=>`<button class="cardbtn" onclick="pick('${m}')">${m}<small>Open fixes</small></button>`).join("");
+render();
+if("serviceWorker" in navigator){navigator.serviceWorker.register("service-worker.js").catch(()=>{});}
+</script>
+</body>
+</html>
